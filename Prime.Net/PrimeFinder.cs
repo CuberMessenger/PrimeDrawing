@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Prime.Net {
     internal class PrimeFinder {
-        // This class implements a bit version of Sieve of Eratosthenes algorithm.
+        // This class implements a bitwise Sieve of Eratosthenes algorithm.
         // It supports finding primes up to 2^37 because it use a single ulong arrary for storing bits.
 
         private const ulong Supremum = 1UL << 37;
@@ -57,7 +57,7 @@ namespace Prime.Net {
         internal void Find(ulong start = 3UL, ulong end = 0UL) {
             end = end == 0UL ? Maximum : end;
 
-            // 2 is prime, so we can start from 3
+            // 2 is prime, start from 3
             for (ulong i = start; i * i <= end; i += 2UL) {
                 if (GetBit(i)) {
                     // flip all multiples of i

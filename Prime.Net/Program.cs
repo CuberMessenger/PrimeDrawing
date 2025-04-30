@@ -66,6 +66,10 @@ catch (Exception ex) {
     Console.WriteLine($"An error occurred while writing to the file: {ex.Message}");
 }
 
+/*
+ It cost about 30 seconds on a Ryzen 5900HX to find all primes within the range [0, 2^32].
+ Then cost a few dozen seconds to compress and write the result to a 297 MB binary file.
+ */
 
 
 
