@@ -22,18 +22,21 @@ namespace Prime.Net {
 
         private ulong[] Bits { get; set; }
 
+        private bool Verbose { get; set; }
+
         private bool GetBit(ulong index) => (Bits[index >> LogULBits] & (1UL << (int)(index & (ULBits - 1)))) != 0;
 
         private void PressBit(ulong index) => Bits[index >> LogULBits] &= ~(1UL << (int)(index & (ULBits - 1)));
 
         private void LiftBit(ulong index) => Bits[index >> LogULBits] |= 1UL << (int)(index & (ULBits - 1));
 
-        internal PrimeFinder(ulong maximum) {
+        internal PrimeFinder(ulong maximum, bool verbose) {
             if (maximum >= Supremum) {
                 throw new ArgumentOutOfRangeException(nameof(maximum), "Maximum must be less than 2^37.");
             }
 
             Maximum = maximum;
+            Verbose = verbose;
             NumBlock = (int)Math.Ceiling((decimal)Maximum / ULBits);
             Bits = new ulong[NumBlock];
 
@@ -48,6 +51,7 @@ namespace Prime.Net {
 
             PressBit(1UL); // 1 is not prime, by definition
             LiftBit(2UL); // 2 is prime
+            Verbose = verbose;
         }
 
         internal void Find(ulong start = 3UL, ulong end = 0UL) {
@@ -57,67 +61,17 @@ namespace Prime.Net {
             for (ulong i = start; i * i <= end; i += 2UL) {
                 if (GetBit(i)) {
                     // flip all multiples of i
-                    Console.WriteLine($"Flipping multiples of {i}......");
+                    if (Verbose) {
+                        Console.WriteLine($"Flipping multiples of {i}......");
+                    }
+
                     for (ulong j = i * i; j <= end; j += i) {
                         PressBit(j);
                     }
-                    Console.WriteLine("Done flipping multiples of {i}......\n");
-                }
-            }
-        }
 
-        internal void FindParallel(ulong start = 3UL, ulong end = 0UL) {
-            end = end == 0UL ? Maximum : end;
-            Thread[] threads = new Thread[Environment.ProcessorCount];
-
-            for (int t = 0; t < threads.Length; t++) {
-                threads[t] = new Thread((object? parameters) => {
-                    if (parameters is null) {
-                        throw new ArgumentNullException("parameters");
+                    if (Verbose) {
+                        Console.WriteLine("Done flipping multiples of {i}......\n");
                     }
-
-                    (ulong start, ulong step) = ((ulong, ulong))parameters;
-                    for (ulong j = start; j <= end; j += step) {
-                        PressBit(j);
-                    }
-                });
-            }
-
-
-            // 2 is prime, so we can start from 3
-            for (ulong i = start; i * i <= end; i += 2UL) {
-                if (GetBit(i)) {
-                    // flip all multiples of i
-                    Console.WriteLine($"Flipping multiples of {i}......");
-
-                    //for (ulong j = i * i; j <= end; j += i) {
-                    //    PressBit(j);
-                    //}
-
-                    GC.Collect();
-                    ulong j = i * i;
-                    ulong step = i * (ulong)threads.Length;
-                    for (int t = 0; t < threads.Length; t++) {
-                        threads[t] = new Thread((object? parameters) => {
-                            if (parameters is null) {
-                                throw new ArgumentNullException("parameters");
-                            }
-
-                            ulong threadStart = (ulong)parameters;
-                            for (ulong p = threadStart; p <= end; p += step) {
-                                PressBit(p);
-                            }
-                        });
-
-                        threads[t].Start(j);
-                        j += i;
-                    }
-
-                    for (int t = 0; t < threads.Length; t++) {
-                        threads[t].Join();
-                    }
-
-                    Console.WriteLine("Done flipping multiples of {i}......\n");
                 }
             }
         }
